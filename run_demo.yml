@@ -47,7 +47,7 @@
 
     - name: Add Cumulus Repo
       apt_repository:
-        repo: deb http://apps3.cumulusnetworks.com/repos/deb CumulusLinux-3 netq-1.1
+        repo: deb http://apps3.cumulusnetworks.com/repos/deb CumulusLinux-3 netq-latest
         state: present
 
     - name: Install NetQ
@@ -120,7 +120,7 @@
 
     - name: Add Cumulus Repo
       apt_repository:
-        repo: deb https://apps3.cumulusnetworks.com/repos/deb xenial netq-1.1
+        repo: deb https://apps3.cumulusnetworks.com/repos/deb xenial netq-latest
         update_cache: no
         state: present
 
