@@ -1,0 +1,96 @@
+net del all
+net add time zone Etc/UTC
+net add time ntp server 0.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 1.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 2.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 3.cumulusnetworks.pool.ntp.org iburst
+net add time ntp source eth0
+net add snmp-server listening-address localhost
+net add bgp autonomous-system 65011
+net add interface swp51-52 ipv6 nd ra-interval 10
+net del interface swp51-52 ipv6 nd suppress-ra
+net add routing defaults datacenter
+net add routing service integrated-vtysh-config
+net add routing log syslog informational
+net add bgp router-id 10.0.0.11
+net add bgp bestpath as-path multipath-relax
+net add bgp neighbor swp51 interface remote-as external
+net add bgp neighbor swp52 interface remote-as external
+net add bgp ipv4 unicast network 10.0.0.11/32 
+net add bgp ipv4 unicast network 10.0.0.112/32 
+net add bgp l2vpn evpn  neighbor swp51 activate
+net add bgp l2vpn evpn  neighbor swp52 activate
+net add bgp l2vpn evpn  advertise-all-vni
+net add dns nameserver ipv4 192.168.0.254 vrf mgmt
+net add ptp global slave-only no
+net add ptp global priority1 255
+net add ptp global priority2 255
+net add ptp global domain-number 0
+net add ptp global logging-level 5
+net add ptp global path-trace-enabled no
+net add ptp global use-syslog yes
+net add ptp global verbose no
+net add ptp global summary-interval 0
+net add ptp global time-stamping
+net add bond bond01 bond slaves swp1
+net add bond bond02 bond slaves swp2
+net add bond peerlink bond slaves swp49,swp50
+net add vxlan vni13 vxlan id 13
+net add vxlan vni24 vxlan id 24
+net add bond bond01 bridge access 13
+net add bond bond01 clag id 1
+net add bond bond01,bond02,peerlink mtu 9000
+net add bond bond02 bridge access 24
+net add bond bond02 clag id 2
+net add bridge bridge ports bond01,bond02,peerlink,vni13,vni24
+net add bridge bridge pvid 1
+net add bridge bridge vids 13,24
+net add bridge bridge vlan-aware
+net add interface eth0 alias management interface
+net add interface eth0 vrf mgmt
+net add interface peerlink.4094 clag backup-ip 10.0.0.12
+net add interface peerlink.4094 clag peer-ip 169.254.1.2
+net add interface peerlink.4094 clag priority 100
+net add interface peerlink.4094 clag sys-mac 44:39:39:ff:40:94
+net add interface peerlink.4094 ip address 169.254.1.1/30
+net add interface swp1 alias to Server01
+net add interface swp1 post-up 'ip link set swp1 promisc on'
+net add interface swp2 alias to Server02
+net add interface swp2 post-up 'ip link set swp2 promisc on'
+net add interface swp49 post-up 'ip link set swp49 promisc on'
+net add interface swp49-50 alias to Leaf02
+net add interface swp50 post-up 'ip link set swp50 promisc on'
+net add interface swp51 alias to Spine01
+net add interface swp51-52 mtu 9216
+net add interface swp52 alias to Spine02
+net add loopback lo alias loopback interface
+net add loopback lo clag vxlan-anycast-ip 10.0.0.112
+net add loopback lo ip address 10.0.0.11/32
+net add vlan 13 ip address 10.1.3.11/24
+net add vlan 13 ip address-virtual 44:39:39:ff:00:13 10.1.3.1/24
+net add vlan 13 vlan-id 13
+net add vlan 13 vlan-raw-device bridge
+net add vlan 24 ip address 10.2.4.11/24
+net add vlan 24 ip address-virtual 44:39:39:ff:00:24 10.2.4.1/24
+net add vlan 24 vlan-id 24
+net add vlan 24 vlan-raw-device bridge
+net add vrf mgmt ip address 127.0.0.1/8
+net add vrf mgmt vrf-table auto
+net add vxlan vni13 bridge access 13
+net add vxlan vni13,24 bridge learning off
+net add vxlan vni13,24 mtu 9000
+net add vxlan vni13,24 stp bpduguard
+net add vxlan vni13,24 stp portbpdufilter
+net add vxlan vni13,24 vxlan local-tunnelip 10.0.0.11
+net add vxlan vni24 bridge access 24
+net add vxlan vni24 bridge arp-nd-suppress on
+net add dot1x radius accounting-port 1813
+net add dot1x radius authentication-port 1812
+net add dot1x mab-activation-delay 30
+net add dot1x eap-reauth-period 0
+net commit
+
+# There are some configuration commands that are not yet supported by nclu.
+# The following will append those commands to the appropriate files.
+# ========================================================================
+sudo sh -c "printf 'username cumulus nopassword\n' >> /etc/frr/frr.conf" 

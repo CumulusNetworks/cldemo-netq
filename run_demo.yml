@@ -1,0 +1,117 @@
+---
+- hosts: servers
+  become: yes
+  tasks:
+    - name: Copy Interface Config
+      copy:
+        src: configurations/{{ansible_hostname}}/interfaces
+        dest: /etc/network/interfaces
+      
+    - name: Fix CITC bonds
+      blockinfile:
+        path: /etc/rc.local
+        block: |
+          /sbin/ethtool -s eth1 speed 1000 duplex full
+          /sbin/ethtool -s eth2 speed 1000 duplex full
+          systemctl restart networking
+
+    # Ping script is so servers generate traffic to populate MAC tables
+    - name: Configure Server01 Ping Cronjob
+      cron:
+        name: "server ping"
+        job: "ping -c 1 10.1.3.103"
+      become: yes
+      become_user: cumulus
+      when: inventory_hostname == "server01"
+
+    - name: Configure Server02 Ping Cronjob
+      cron:
+        name: "server ping"
+        job: "ping -c 1 10.2.4.104"
+      become: yes
+      become_user: cumulus
+      when: inventory_hostname == "server02"
+      
+    - name: Install LLDP
+      apt:
+        name: lldpd
+        state: present
+        update_cache: yes
+
+    - name: Correct LLDP Settings
+      lineinfile:
+        dest: /etc/lldpd.d/port_info.conf
+        line: "configure lldp portidsubtype ifname"
+        create: yes
+                
+    - name: Install traceroute
+      apt:
+        name: traceroute
+        state: present
+       
+    - name: Install NTP
+      apt:
+        name: ntp
+        state: present
+        
+    - name: reboot
+      shell: sleep 5 && reboot
+      async: 1
+      poll: 0
+     
+- hosts: switches
+  become: yes
+  pre_tasks:
+    # To prevent unexpected problems, define the minimum Cumulus Linux
+    # Release supported by this demo.
+    - name: Verify Minimum Software Version
+      assert:
+        that: "{{ansible_lsb.release is version_compare('3.5', '>=') }}"
+        msg: >
+          "Cumulus Linux version must be 3.5 or later.
+          Version {{ansible_lsb.release}} detected"
+          
+  tasks:
+    - name: Move NTP to Mgmt VRF
+      command: " {{ item }} "
+      with_items:
+        - systemctl stop ntp.service
+        - systemctl disable ntp.service
+        - systemctl start ntp@mgmt.service
+        - systemctl enable ntp@mgmt.service
+
+    - name: Enable FRR Zebra
+      lineinfile:
+        dest: /etc/frr/daemons
+        line: "zebra=yes"
+        regexp: "zebra="
+
+    - name: Enable FRR BGP
+      lineinfile:
+        dest: /etc/frr/daemons
+        line: "bgpd=yes"
+        regexp: "bgpd="
+
+    - name: Copy Interfaces File
+      copy:
+        src: configurations/{{ansible_hostname}}/etc/network/interfaces
+        dest: /etc/network/interfaces
+        validate: ifup -a -s -i %s
+    
+    - name: Copy Routing Configuration
+      copy:
+        src: configurations/{{ansible_hostname}}/etc/frr/frr.conf
+        dest: /etc/frr/frr.conf
+        validate: vtysh -C -f %s
+        
+    - name: Move netq agent to mgmt VRF
+      command: netq config add agent server 192.168.0.254 vrf mgmt
+      
+    - name: Move netq cli to mgmt VRF
+      command: netq config add cli server 192.168.0.254 vrf mgmt
+       
+    - name: reboot
+      shell: sleep 5 && reboot
+      async: 1
+      poll: 0      
+     

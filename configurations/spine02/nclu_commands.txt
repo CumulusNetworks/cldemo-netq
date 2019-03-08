@@ -1,0 +1,60 @@
+net del all
+net add time zone Etc/UTC
+net add time ntp server 0.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 1.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 2.cumulusnetworks.pool.ntp.org iburst
+net add time ntp server 3.cumulusnetworks.pool.ntp.org iburst
+net add time ntp source eth0
+net add snmp-server listening-address localhost
+net add bgp autonomous-system 65020
+net add interface swp1-4,29-30 ipv6 nd ra-interval 10
+net del interface swp1-4,29-30 ipv6 nd suppress-ra
+net add routing defaults datacenter
+net add routing service integrated-vtysh-config
+net add routing log syslog informational
+net add bgp router-id 10.0.0.22
+net add bgp bestpath as-path multipath-relax
+net add bgp neighbor swp1 interface remote-as external
+net add bgp neighbor swp2 interface remote-as external
+net add bgp neighbor swp3 interface remote-as external
+net add bgp neighbor swp4 interface remote-as external
+net add bgp ipv4 unicast network 10.0.0.22/32 
+net add bgp l2vpn evpn  neighbor swp1 activate
+net add bgp l2vpn evpn  neighbor swp2 activate
+net add bgp l2vpn evpn  neighbor swp3 activate
+net add bgp l2vpn evpn  neighbor swp4 activate
+net add dns nameserver ipv4 192.168.0.254 vrf mgmt
+net add ptp global slave-only no
+net add ptp global priority1 255
+net add ptp global priority2 255
+net add ptp global domain-number 0
+net add ptp global logging-level 5
+net add ptp global path-trace-enabled no
+net add ptp global use-syslog yes
+net add ptp global verbose no
+net add ptp global summary-interval 0
+net add ptp global time-stamping
+net add interface eth0 alias management interface
+net add interface eth0 vrf mgmt
+net add interface swp1 alias to Leaf01
+net add interface swp1-4,29-32 mtu 9216
+net add interface swp2 alias to Leaf02
+net add interface swp29 alias to Exit01
+net add interface swp3 alias to Leaf03
+net add interface swp30 alias to Exit02
+net add interface swp31-32 alias to Spine02
+net add interface swp4 alias to Leaf04
+net add loopback lo alias loopback interface
+net add loopback lo ip address 10.0.0.22/32
+net add vrf mgmt ip address 127.0.0.1/8
+net add vrf mgmt vrf-table auto
+net add dot1x radius accounting-port 1813
+net add dot1x radius authentication-port 1812
+net add dot1x mab-activation-delay 30
+net add dot1x eap-reauth-period 0
+net commit
+
+# There are some configuration commands that are not yet supported by nclu.
+# The following will append those commands to the appropriate files.
+# ========================================================================
+sudo sh -c "printf 'username cumulus nopassword\n' >> /etc/frr/frr.conf" 
