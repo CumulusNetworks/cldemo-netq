@@ -1,3 +1,6 @@
+# DEPRECATED
+## This repo is no longer maintained.<br>For a list of current demos, please visit:<br>https://gitlab.com/cumulus-consulting/goldenturtle/<br><br><br>
+
 # Cumulus NetQ Demo
 
 This demo will install Cumulus Linux [NetQ](https://docs.cumulusnetworks.com/display/NETQ) Fabric Validation System using the Cumulus [reference topology](https://github.com/cumulusnetworks/cldemo-vagrant). Please visit the reference topology github page for detailed instructions on using Cumulus Vx with Vagrant.
